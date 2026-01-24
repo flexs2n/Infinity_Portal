@@ -71,13 +71,3 @@ Open `http://localhost:3000` for the app and `http://localhost:8000/docs` for AP
 - `/ticker/{ticker}/event/{id}` - Event detail with evidence
 - `/audit` - Audit log
 
-## Limitations
-
-- Correlation does not imply causation
-- Social media represents retail sentiment only
-- Static historical dataset
-- Not investment advice
-
-## License
-
-Proprietary
