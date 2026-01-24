@@ -1,31 +1,32 @@
 from swarms import Agent
-from swarm_models import OpenAIChat
+from swarm_models import AnthropicChat  # Change import to Anthropic
 from typing import Dict, List
 from loguru import logger
 import json
+import os  # Ensure os is imported for env vars
 
 class EdgeFinderAgent:
     """
     AI agent that discovers trading edges from multiple data sources
-    Uses GPT-4 for pattern recognition and edge identification
+    Uses Anthropic Haiku for pattern recognition and edge identification
     """
-    
+
     def __init__(self):
-        self.model = OpenAIChat(
-            model_name="gpt-4o",
-            temperature=0.7,  # Higher for creative edge discovery
-            openai_api_key=os.getenv("OPENAI_API_KEY")
+        self.model = AnthropicChat(
+            model_name="claude-3-haiku-20240307",  # Anthropic Haiku v4
+            temperature=0.7,
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
-        
+
         self.agent = Agent(
             agent_name="Edge-Finder",
             system_prompt=self._get_system_prompt(),
             llm=self.model,
-            max_loops=3,  # Allow iterative refinement
+            max_loops=3,
             autosave=True,
             verbose=True,
-            context_length=128000,  # GPT-4 Turbo's large context
-            output_type="json"  # Structured output
+            context_length=128000,
+            output_type="json"
         )
     
     def _get_system_prompt(self) -> str:
