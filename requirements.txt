@@ -3,9 +3,11 @@ tickr-agent
 pydantic
 loguru
 swarm-models
-fastapi 
-uvicorn 
-requests 
+fastapi
+uvicorn
+requests
+email-validator
+langchain-community 
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0

@@ -1,3 +1,6 @@
-from infinity_portal.main import infinity_portal
+from infinity_portal.main import AutoHedge
 
-__all__ = ["infinity_portal"]
+# Alias for backward compatibility
+infinity_portal = AutoHedge
+
+__all__ = ["infinity_portal", "AutoHedge"]

@@ -18,7 +18,7 @@ from fastapi.security import APIKeyHeader
 from loguru import logger
 from pydantic import BaseModel, EmailStr, Field
 
-from infinity_portal.main import infinity_portal
+from infinity_portal.main import AutoHedge as infinity_portal
 
 
 def log_agent_data(data_dict: dict) -> dict | None:
@@ -469,7 +469,10 @@ class infinity_portalAPI:
         uvicorn.run(self.app, host=host, port=port, *args, **kwargs)
 
 
+# Create app instance for uvicorn
+_api_instance = infinity_portalAPI()
+app = _api_instance.app
+
 # Example usage
 if __name__ == "__main__":
-    api = infinity_portalAPI()
-    api.run()
+    _api_instance.run()

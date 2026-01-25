@@ -26,7 +26,9 @@ import json
 from loguru import logger
 from pydantic import BaseModel, Field
 from swarms import Agent, Conversation
-from tickr_agent.main import TickrAgent
+
+# Lazy import to avoid initialization at module load time
+TickrAgent = None
 
 # Import new components
 try:
@@ -342,8 +344,11 @@ class TradingDirector:
             Tuple of (thesis, market_data)
         """
         logger.info(f"Generating thesis for {stock}")
-        
+
         try:
+            # Lazy import to avoid initialization at module load time
+            from tickr_agent.main import TickrAgent
+
             # Initialize market data collector
             self.tickr = TickrAgent(
                 stocks=[stock],
