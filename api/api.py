@@ -14,6 +14,7 @@ from fastapi import (
     Query,
     Security,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from loguru import logger
 from pydantic import BaseModel, EmailStr, Field
@@ -136,6 +137,20 @@ class infinity_portalAPI:
             *args,
             **kwargs,
         )
+
+        # Add CORS middleware
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://frontend:80",
+            ],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
         self.api_key_header = APIKeyHeader(name="X-API-Key")
         self.users: Dict[str, User] = {}
         self.api_keys: Dict[str, str] = {}

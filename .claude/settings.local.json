@@ -1,9 +1,4 @@
 {
-  "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-1234-tap-tap-go-new",
-    "ANTHROPIC_BASE_URL": "https://mercor-rl--litellm-proxy-serve.modal.run"
-  },
-  "model": "zorilla",
   "hooks": {
     "SessionStart": [
       {
@@ -40,9 +35,9 @@
       }
     ]
   },
-  "permissions": {
-    "allow": [
-      "Bash(python:*)"
-    ]
+  "model": "zorilla",
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-1234-tap-tap-go-new",
+    "ANTHROPIC_BASE_URL": "https://mercor-rl--litellm-proxy-serve.modal.run"
   }
 }
