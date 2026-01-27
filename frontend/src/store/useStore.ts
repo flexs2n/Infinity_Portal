@@ -149,7 +149,7 @@ export const useStore = create<AppState>()(
       clearError: () => set({ error: null }),
     }),
     {
-      name: 'infinity-portal-storage',
+      name: 'narrative-alpha-storage',
       partialize: (state) => ({
         apiKey: state.apiKey,
         isAuthenticated: state.isAuthenticated,

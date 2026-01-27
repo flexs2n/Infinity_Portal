@@ -70,7 +70,7 @@ export function Onboarding() {
               <span className="text-2xl font-bold text-white">IP</span>
             </div>
             <span className="text-2xl font-bold text-foreground">
-              Infinity Portal
+              Narrative Alpha
             </span>
           </div>
           <p className="text-muted-foreground">

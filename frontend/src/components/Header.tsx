@@ -32,7 +32,7 @@ export function Header() {
               <span className="text-lg font-bold text-white">IP</span>
             </div>
             <span className="text-lg font-semibold text-foreground">
-              Infinity Portal
+              Narrative Alpha
             </span>
           </Link>
 

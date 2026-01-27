@@ -9,7 +9,9 @@ import type {
   TradesListParams,
 } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// In production (Docker), use the nginx proxy at /api
+// In development, use the Vite proxy or direct localhost connection
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000');
 
 const apiClient = axios.create({
   baseURL: API_URL,

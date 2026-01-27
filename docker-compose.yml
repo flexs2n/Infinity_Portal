@@ -11,6 +11,8 @@ services:
       - backend
     environment:
       - VITE_API_URL=http://localhost:8001
+    volumes:
+      - ./dataf:/usr/share/nginx/html/dataf:ro
     networks:
       - infinity-network
     restart: unless-stopped

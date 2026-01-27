@@ -15,6 +15,7 @@ import { TradeDetail } from '@/pages/TradeDetail';
 import { TradesList } from '@/pages/TradesList';
 import { Analytics } from '@/pages/Analytics';
 import { Onboarding } from '@/pages/Onboarding';
+import { Narrative } from '@/pages/Narrative';
 
 // Protected route wrapper
 function ProtectedLayout() {
@@ -66,6 +67,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/trade/new" element={<NewTrade />} />
           <Route path="/trade/:id" element={<TradeDetail />} />
+          <Route path="/narrative/:id" element={<Narrative />} />
           <Route path="/trades" element={<TradesList />} />
           <Route path="/analytics" element={<Analytics />} />
         </Route>

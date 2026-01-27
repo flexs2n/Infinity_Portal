@@ -316,7 +316,7 @@ class TradingDirector:
         self.director_agent = Agent(
             agent_name="Trading-Director",
             system_prompt=DIRECTOR_PROMPT,
-            model_name="anthropic/sonnet-3",
+            model_name="anthropic/claude-3-5-haiku-20241022",
             output_type="str",
             max_loops=1,
             verbose=True,
@@ -348,14 +348,24 @@ class TradingDirector:
         try:
             # Lazy import to avoid initialization at module load time
             from tickr_agent.main import TickrAgent
+            from swarm_models import OpenAIChat
+            
+            # Create an explicit LLM model to avoid import-time issues
+            # where the API key might not be loaded yet
+            tickr_llm = OpenAIChat(
+                openai_api_key=os.getenv("OPENAI_API_KEY"),
+                model_name="gpt-4o-mini",
+                temperature=0.1,
+            )
 
-            # Initialize market data collector
+            # Initialize market data collector with explicit LLM
             self.tickr = TickrAgent(
                 stocks=[stock],
                 max_loops=1,
                 workers=10,
                 retry_attempts=1,
                 context_length=16000,
+                llm=tickr_llm,
             )
             
             # Fetch market data
@@ -434,7 +444,7 @@ class QuantAnalyst:
         self.quant_agent = Agent(
             agent_name="Quant-Analyst",
             system_prompt=QUANT_PROMPT,
-            model_name="anthropic/sonnet-3",
+            model_name="anthropic/claude-3-5-haiku-20241022",
             output_type="str",
             max_loops=1,
             verbose=True,
@@ -496,7 +506,7 @@ class RiskManager:
         self.risk_agent = Agent(
             agent_name="Risk-Manager",
             system_prompt=RISK_PROMPT,
-            model_name="anthropic/sonnet-3",
+            model_name="anthropic/claude-3-5-haiku-20241022",
             output_type="str",
             max_loops=1,
             verbose=True,
@@ -597,7 +607,7 @@ class ExecutionAgent:
         self.execution_agent = Agent(
             agent_name="Execution-Agent",
             system_prompt=EXECUTION_PROMPT,
-            model_name="anthropic/sonnet-3",
+            model_name="anthropic/claude-3-5-haiku-20241022",
             output_type="str",
             max_loops=1,
             verbose=True,
@@ -1144,8 +1154,100 @@ class AutoHedge:
             
             return self.logs.model_dump_json(indent=2)
         
+        elif self.output_type == "structured":
+            # Return structured output matching frontend TradeResult interface
+            structured_output = {
+                'confidence_score': int(self.overall_confidence * 100),
+                'recommended_action': 'HOLD',  # Default, will be parsed from decision
+                'risk_factors': self.risk_factors,
+            }
+            
+            # Extract data from logs for each stock
+            if self.logs.logs:
+                # Use first stock's analysis for now (can be extended for multi-stock)
+                analysis = self.logs.logs[0]
+                
+                if analysis.thesis:
+                    structured_output['trading_thesis'] = analysis.thesis
+                
+                if analysis.quant_analysis:
+                    structured_output['quantitative_analysis'] = analysis.quant_analysis
+                
+                if analysis.sentiment_analysis:
+                    structured_output['sentiment_analysis'] = analysis.sentiment_analysis
+                
+                if analysis.risk_assessment:
+                    structured_output['risk_assessment'] = analysis.risk_assessment
+                
+                if analysis.order:
+                    structured_output['execution_order'] = analysis.order
+                
+                if analysis.decision:
+                    structured_output['final_decision'] = analysis.decision
+                    # Parse recommended action from decision
+                    decision_upper = analysis.decision.upper()
+                    if 'BUY' in decision_upper:
+                        structured_output['recommended_action'] = 'BUY'
+                    elif 'SELL' in decision_upper:
+                        structured_output['recommended_action'] = 'SELL'
+                    else:
+                        structured_output['recommended_action'] = 'HOLD'
+                
+                if analysis.confidence_score:
+                    structured_output['confidence_score'] = int(analysis.confidence_score * 100)
+                
+                if analysis.divergence_alert:
+                    structured_output['divergence_alert'] = analysis.divergence_alert
+            
+            return structured_output
+        
         else:
-            return self.logs.model_dump_json(indent=2)
+            # Default to structured output for API compatibility
+            return self._generate_structured_output()
+    
+    def _generate_structured_output(self) -> dict:
+        """Generate structured output matching frontend TradeResult interface"""
+        structured_output = {
+            'confidence_score': int(self.overall_confidence * 100),
+            'recommended_action': 'HOLD',
+            'risk_factors': self.risk_factors,
+        }
+        
+        if self.logs.logs:
+            analysis = self.logs.logs[0]
+            
+            if analysis.thesis:
+                structured_output['trading_thesis'] = analysis.thesis
+            
+            if analysis.quant_analysis:
+                structured_output['quantitative_analysis'] = analysis.quant_analysis
+            
+            if analysis.sentiment_analysis:
+                structured_output['sentiment_analysis'] = analysis.sentiment_analysis
+            
+            if analysis.risk_assessment:
+                structured_output['risk_assessment'] = analysis.risk_assessment
+            
+            if analysis.order:
+                structured_output['execution_order'] = analysis.order
+            
+            if analysis.decision:
+                structured_output['final_decision'] = analysis.decision
+                decision_upper = analysis.decision.upper()
+                if 'BUY' in decision_upper:
+                    structured_output['recommended_action'] = 'BUY'
+                elif 'SELL' in decision_upper:
+                    structured_output['recommended_action'] = 'SELL'
+                else:
+                    structured_output['recommended_action'] = 'HOLD'
+            
+            if analysis.confidence_score:
+                structured_output['confidence_score'] = int(analysis.confidence_score * 100)
+            
+            if analysis.divergence_alert:
+                structured_output['divergence_alert'] = analysis.divergence_alert
+        
+        return structured_output
     
     def generate_dashboard(self) -> str:
         """Generate trust breakdown dashboard"""
