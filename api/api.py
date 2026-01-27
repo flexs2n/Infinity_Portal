@@ -1,5 +1,7 @@
 import time
 import uuid
+import asyncio
+import json as json_lib
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
@@ -16,6 +18,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
+from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, EmailStr, Field
 
@@ -276,6 +279,7 @@ class infinity_portalAPI:
                         description=current_user.fund_description
                         or "",
                         stocks=task.stocks,
+                        output_type="structured",  # Return structured data for frontend
                     )
 
                     trade_response = TradeResponse(
@@ -392,6 +396,141 @@ class infinity_portalAPI:
             del self.trades[trade_id]
             logger.info(f"Trade deleted: {trade_id}")
             return {"message": "Trade deleted successfully"}
+
+        # Streaming Trade Endpoint - for real-time progress updates
+        @self.app.post("/trades/stream")
+        async def create_trade_stream(
+            task: TradingTask,
+            current_user: User = Depends(self._get_current_user),
+        ):
+            """Create a trade with streaming progress updates via SSE"""
+            
+            async def generate_stream():
+                trade_id = str(uuid.uuid4())
+                
+                try:
+                    # Create initial trade record so users can navigate to it early
+                    initial_trade = TradeResponse(
+                        id=trade_id,
+                        user_id=current_user.id,
+                        task=task,
+                        status=TradeStatus.EXECUTING,
+                        created_at=datetime.now(timezone.utc),
+                        executed_at=None,
+                        result={'status': 'analyzing', 'message': 'AI analysis in progress...'},
+                        performance_metrics=None,
+                    )
+                    self.trades[trade_id] = initial_trade
+                    
+                    # Send initial status with trade_id for "Skip to Report"
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'init', 'message': '🚀 Initializing AI trading system...', 'progress': 5, 'trade_id': trade_id})}\n\n"
+                    await asyncio.sleep(0.5)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'agents', 'message': '🤖 Activating AI agents: Trading Director, Quant Analyst, Risk Manager...', 'progress': 10, 'trade_id': trade_id})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    # Initialize the trading system
+                    trading_system = infinity_portal(
+                        name=current_user.fund_name,
+                        description=current_user.fund_description or "",
+                        stocks=task.stocks,
+                        output_type="structured",
+                    )
+                    
+                    stock_list = ", ".join(task.stocks)
+                    
+                    msg = f"📊 Fetching real-time market data for {stock_list}..."
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'market_data', 'message': msg, 'progress': 20})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    msg = f"Analyzing market conditions for {stock_list}. Looking at current price trends, volume patterns, and recent news catalysts..."
+                    yield f"data: {json_lib.dumps({'type': 'reasoning', 'agent': 'Trading Director', 'message': msg, 'progress': 25})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'thesis', 'message': '📝 Trading Director: Generating investment thesis...', 'progress': 30})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'reasoning', 'agent': 'Trading Director', 'message': 'Evaluating fundamental factors: earnings growth, market position, competitive advantages, and sector trends...', 'progress': 35})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'quant', 'message': '📈 Quant Analyst: Running technical analysis...', 'progress': 45})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'reasoning', 'agent': 'Quant Analyst', 'message': 'Calculating RSI, MACD, Moving Averages, Bollinger Bands. Identifying support/resistance levels and trend strength...', 'progress': 50})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'sentiment', 'message': '💬 Sentiment Agent: Analyzing market sentiment...', 'progress': 60})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'reasoning', 'agent': 'Sentiment Agent', 'message': 'Scanning financial news, social media sentiment, analyst ratings, and institutional activity for sentiment signals...', 'progress': 65})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'risk', 'message': '⚠️ Risk Manager: Assessing risk factors...', 'progress': 75})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    msg = f"Calculating position size for ${task.allocation:,.0f} allocation. Determining stop-loss levels, maximum drawdown, and risk-adjusted returns..."
+                    yield f"data: {json_lib.dumps({'type': 'reasoning', 'agent': 'Risk Manager', 'message': msg, 'progress': 80})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'execution', 'message': '📋 Execution Agent: Generating trade parameters...', 'progress': 85})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    # Actually run the analysis
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'analysis', 'message': '🧠 Running comprehensive AI analysis... This may take 1-3 minutes.', 'progress': 90})}\n\n"
+                    
+                    # Run the actual trading analysis
+                    result = trading_system.run(task=task.task)
+                    
+                    yield f"data: {json_lib.dumps({'type': 'status', 'step': 'decision', 'message': '🎯 Finalizing recommendation...', 'progress': 95})}\n\n"
+                    await asyncio.sleep(0.3)
+                    
+                    # Create trade response
+                    trade_response = TradeResponse(
+                        id=trade_id,
+                        user_id=current_user.id,
+                        task=task,
+                        status=TradeStatus.COMPLETED,
+                        created_at=datetime.now(timezone.utc),
+                        executed_at=datetime.now(timezone.utc),
+                        result=result,
+                        performance_metrics=self._calculate_performance_metrics(result),
+                    )
+                    
+                    # Store trade
+                    self.trades[trade_id] = trade_response
+                    
+                    # Extract summary data for the completion message
+                    summary = {
+                        'action': result.get('recommended_action', 'HOLD'),
+                        'confidence': result.get('confidence_score', 0),
+                        'stocks': task.stocks,
+                    }
+                    
+                    # Try to extract price from execution order if available
+                    if result.get('execution_order'):
+                        exec_order = result['execution_order']
+                        # Simple extraction of price mentions
+                        import re
+                        price_match = re.search(r'\$?([\d,]+\.?\d*)', str(exec_order))
+                        if price_match:
+                            summary['entry_price'] = price_match.group(1).replace(',', '')
+                    
+                    # Send completion with result and summary
+                    yield f"data: {json_lib.dumps({'type': 'complete', 'trade_id': trade_id, 'message': '✅ Analysis complete!', 'progress': 100, 'summary': summary})}\n\n"
+                    
+                except Exception as e:
+                    logger.error(f"Streaming trade failed: {str(e)}")
+                    yield f"data: {json_lib.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            
+            return StreamingResponse(
+                generate_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                }
+            )
 
         # Analytics Routes
         @self.app.get(
